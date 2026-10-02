@@ -1,0 +1,43 @@
+name: Reconstruct mod artifacts
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  reconstruct:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct JAR and extracted files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist extracted
+          cat .artifact-base64/jar_* | base64 --decode > "dist/e4mc-voice-bridge-1.0.2+26.3.jar"
+          rm -rf extracted/*
+          unzip -q -o "dist/e4mc-voice-bridge-1.0.2+26.3.jar" -d extracted
+          {
+            sha256sum "dist/e4mc-voice-bridge-1.0.2+26.3.jar"
+            find extracted -type f -print0 | sort -z | xargs -0 sha256sum
+          } > SHA256SUMS.txt
+
+      - name: Commit reconstructed artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist extracted SHA256SUMS.txt
+          if git diff --cached --quiet; then
+            echo "No artifact changes to commit."
+            exit 0
+          fi
+          git commit -m "Add reconstructed 26.3 mod artifacts"
+          git push
