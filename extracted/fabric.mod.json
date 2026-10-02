@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "e4mc_voice_bridge",
+  "version": "1.0.2+26.3",
+  "name": "E4MC Voice Bridge",
+  "description": "Carries Simple Voice Chat through the existing Minecraft connection so it works over e4mc without UDP port forwarding.",
+  "authors": [
+    "Phoenix"
+  ],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "e4mc.voicebridge.E4mcVoiceBridge"
+    ],
+    "client": [
+      "e4mc.voicebridge.E4mcVoiceBridgeClient"
+    ],
+    "voicechat": [
+      "e4mc.voicebridge.E4mcVoiceBridgePlugin"
+    ]
+  },
+  "mixins": [
+    "e4mc_voice_bridge.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": ">=0.160.6+26.3",
+    "voicechat_api": ">=2.6.23",
+    "voicechat": ">=2.6.23"
+  },
+  "suggests": {
+    "e4mc_minecraft": "*"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "e4mc.voicebridge.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "ClientManagerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
