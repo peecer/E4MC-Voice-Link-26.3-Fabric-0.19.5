@@ -2,6 +2,11 @@ name: Reconstruct mod artifacts
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/reconstruct.yml"
 
 permissions:
   contents: write
