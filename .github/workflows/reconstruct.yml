@@ -15,13 +15,62 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Reconstruct JAR and extracted files
+      - name: Download verified 1.0.2 release
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p dist extracted
-          cat .artifact-base64/jar_* | base64 --decode > "dist/e4mc-voice-bridge-1.0.2+26.3.jar"
-          rm -rf extracted/*
+          curl -fsSL -A "E4MC-Voice-Link GitHub Actions" \
+            "https://api.modrinth.com/v2/version/OjREMhJA" -o version.json
+          SOURCE_URL="$(jq -r '([.files[] | select(.primary == true)][0].url // .files[0].url)' version.json)"
+          test -n "$SOURCE_URL"
+          test "$SOURCE_URL" != "null"
+          curl -fsSL -A "E4MC-Voice-Link GitHub Actions" "$SOURCE_URL" -o source.jar
+          echo "ece57b39ce65d651f9adeb0e331d8252e8b2413f  source.jar" | sha1sum -c -
+
+      - name: Create exact 26.3 compatibility JAR
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          python - <<'PY'
+          import json
+          import zipfile
+
+          source = "source.jar"
+          output = "dist/e4mc-voice-bridge-1.0.2+26.3.jar"
+
+          with zipfile.ZipFile(source, "r") as zin, zipfile.ZipFile(output, "w") as zout:
+              for item in zin.infolist():
+                  data = zin.read(item.filename)
+
+                  if item.filename == "fabric.mod.json":
+                      obj = json.loads(data.decode("utf-8"))
+                      obj["version"] = "1.0.2+26.3"
+                      depends = obj["depends"]
+                      depends["fabricloader"] = ">=0.19.5"
+                      depends["minecraft"] = "~26.3"
+                      depends["fabric-api"] = ">=0.160.6+26.3"
+                      depends["voicechat_api"] = ">=2.6.23"
+                      depends["voicechat"] = ">=2.6.23"
+                      data = (json.dumps(obj, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+
+                  elif item.filename == "META-INF/MANIFEST.MF":
+                      data = data.replace(
+                          b"Fabric-Minecraft-Version: 26.2",
+                          b"Fabric-Minecraft-Version: 26.3",
+                      )
+
+                  zout.writestr(item, data)
+          PY
+
+          echo "587a82e36633d18c97887cadba4002c72b288fb4a15bb9159ccde1d973058492  dist/e4mc-voice-bridge-1.0.2+26.3.jar" | sha256sum -c -
+
+      - name: Extract JAR contents and generate checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf extracted
+          mkdir -p extracted
           unzip -q -o "dist/e4mc-voice-bridge-1.0.2+26.3.jar" -d extracted
           {
             sha256sum "dist/e4mc-voice-bridge-1.0.2+26.3.jar"
